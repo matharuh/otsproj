@@ -1,0 +1,254 @@
+#!/usr/bin/perl
+######################################################################                  
+# Script: ots_tickets                                                                   
+# Author: Hardev Matharu                                                                
+# Course: CMPT 220 [ Programming Assignment]                                                     
+# Student ID: 1582271                                                                   
+#######################################################################                 
+
+use strict;
+use warnings;
+
+
+use Data::Dumper qw(Dumper);
+
+use Getopt::Std;
+our $COURTDATEFIRST;
+use vars qw ($COURTDATELAST);
+my @courtDate = ();
+my @speedLimit = ();
+my @recordedSpeed = ();
+#sub extraction();
+
+
+#################################################
+# Function that Displays Usage, options and modes
+################################################# 
+sub usage(){
+    print " \n";
+    print "$0: Usage: ots_tickets [OPTION...] (fields|court|summary) FILE...\n";
+    print " \n";
+    print "Options:\n";
+    print "\t -h: to display usage information and exit \n";
+    print "\t -v: to enable a verbose mode where your script prints extra in
+          formation to standard error \n";
+    print "\t -o ﬁle: to save the output in ﬁle rather than output it to 
+           standard output. \n";
+    print " \n";
+    print "Mode selection Arguments: \n\n";
+    print "Fields: creates CSV output summarizing as many ﬁelds as possible 
+          along with headers \n";
+    print "Court: creates CSV output summarizing the court dates using the 
+           following ﬁelds (with headers):
+           (a) court date and
+           (b) number of assigned tickets, for that date; summarizing as many 
+            ﬁelds as possible along with headers \n";
+    print "Summary: creates CSV output that provides a per-input ﬁle summary;
+            it must include the following ﬁelds (with headers):
+           (a) name of the input text ﬁle,
+           (b) earliest court date in the ﬁle,
+           (c) latest court date in the ﬁle,
+           (d) lowest recorded speed diﬀerence (recorded speed - speed limit),
+           (e) highest recorded speed diﬀerence (recorded speed- speed limit) \n";
+           
+   
+}
+usage(); # function usage being called
+
+#############################
+# Function for getting options
+##############################
+
+# not implemented
+    #my %opts;
+    #getopts ("h:v:o", \%opts);
+    #usage() if $opts{h};
+
+
+
+# check if mode and filename both are available otherwise give error  
+my ($mode,$file)= @ARGV;
+if (not defined $mode){
+    die " Enter mode \n";
+    exit;
+}
+if (not defined $file){
+    die " Enter file name \n";
+    exit;
+}
+
+sub extraction();
+
+sub court ();
+
+sub summary();
+####Check Modes and call appropiate subroutines ######
+if(lc($ARGV[0]) eq "fields"){
+    extraction();
+}
+
+if(lc($ARGV[0]) eq "court"){
+
+    court();
+
+}
+
+if(lc($ARGV[0]) eq "summary"){
+    summary();
+}
+
+########################                                                                                  
+#Function for Court Summary!!!                                                         
+########################                                                                                 
+sub court(){
+    print "Input File: $ARGV[1] \n";
+    my $file = $ARGV[1];
+    while(<>) {
+            if( /COURT DATE: (.+)/){
+            my $court_date = $1;
+            $court_date =~ s/^(\d)+ (.+) \S$//;
+            push @courtDate , $court_date;
+	    }
+      # uniq @courtDate;
+       #print "@courtDate \n";
+	    
+    }
+
+
+    my @uniquedates;
+    my %seen;
+    foreach my $date (@courtDate){
+	if (! $seen{$date}++){
+	    push @uniquedates, $date;
+	#    $seen{$date} = 1;
+	}
+#    print "@uniquedates \n";
+	
+    }
+    print "@uniquedates \n";
+}
+
+######################
+# Function for summary
+######################
+sub summary(){
+
+    print "Input File: $ARGV[1] \n";
+    my $file = $ARGV[1];    
+    while(<>) {
+	    if( /COURT DATE: (.+)/){
+            my $court_date = $1;
+            $court_date =~ s/^(\d)+ (.+) \S$//;
+            push @courtDate , $court_date;
+	    
+        }
+
+        if (/SPEED LIMIT: (.+) RECORDED SPEED:/){
+            my $speed_limit = $1;
+            $speed_limit =~ s/\s+$//;
+            push @speedLimit , $speed_limit;
+#            print "$speed_limit ,", ;
+
+        }
+        if(/RECORDED SPEED: (.+)/){
+            my $recorded_speed = $1;
+            $recorded_speed =~ s/^(\d)+ (.+) \S$//;
+            push @recordedSpeed , $recorded_speed;
+ #           print "$recorded_speed ,";
+
+	}
+	    #my $speed_diff = $recorded_speed - $speed_limit;
+	    #push @speedDiff , $speed_diff;
+	    
+
+    }
+	   
+	   # my @speedDiff = diff(\@recordedSpeed , \@speedLimit);
+	    
+    sort @courtDate;
+    my $arrSize = @courtDate;
+    my $last = ($arrSize - 1);
+    print "Latest date: $courtDate[0] \n";
+    print "Earliest date: $courtDate[$last] \n";
+}
+
+########################
+#Function for Extracting fields for field mode!!!
+########################    
+sub extraction() {
+  
+    print "\n";
+    my $file = $ARGV[1];
+
+    my @headers = ("Full name ,","Court date , ", "Licence , ",
+		   "Offence Date , ", "Speed limit ,","Recorded speed , ",
+		   "Ticket number , " , "Penalty \n" );
+    print @headers;
+    open my $fh, '<', $file or die "Could not open '$file' $!\n"; 
+    while (<$fh>) {
+    
+	if( /NAME: (.+) COURT DATE:/){
+	    my $name = $1;
+	    $name =~ s/\s+$//;
+	    print "$name ,";
+	}
+	if( /COURT DATE: (.+)/){
+	    my $court_date = $1;
+	    $court_date =~ s/^(\d)+ (.+) \S$//;
+	    push @courtDate , $court_date;
+	    print " $court_date , ";
+	}
+	if (/SPEED LIMIT: (.+) RECORDED SPEED:/){
+	    my $speed_limit = $1;
+	    $speed_limit =~ s/\s+$//;
+	    push @speedLimit , $speed_limit;
+	    print "$speed_limit ,", ;
+
+	}
+	if(/RECORDED SPEED: (.+)/){
+	    my $recorded_speed = $1;
+	    $recorded_speed =~ s/^(\d)+ (.+) \S$//;
+	    push @recordedSpeed , $recorded_speed;
+	    print "$recorded_speed ,";
+	    
+	}
+	if(/TICKET #: (.+) PENALTY:/){
+	    my $ticket_num = $1;
+	    $ticket_num =~ s/\s+$//;
+	    print "$ticket_num , ";
+	}
+	if(/PENALTY: (.+)/){
+	    my $penalty = $1;
+	    $penalty =~ s/^$ \S$//;
+	    print "$penalty \n";
+	}
+    
+	if(/LICENCE #: (.+)/){
+	    my $licence = $1;
+	    $licence =~ s/^(\w)+ (.+) \S$//;
+	    print "$licence , ";
+	}
+	if(/OFFENCE: (.+) LICENCE #:/){
+	    my $offence_date= $1;
+	    $offence_date =~ s/\s+$//;
+	    print "$offence_date , ";
+	}
+	if( /^ADDRESS (.+) \n (.+) \s$/){
+	    my ($add1, $add2) = ($1, $2);
+	    
+	    $add1 =~ s/^(\w)+ (.+) \S$//;
+	    $add2 =~ s/^(\w)+ (.+) \S$//;
+	    print "$add1 , $add2";
+	}
+#	sub summary(){
+#	    print "@courtDate \n";
+#	}
+#	push @speed_diff , $speedDiff;
+    }
+
+    sort @courtDate;
+    $COURTDATEFIRST = $courtDate[0];
+#   print "@courtDate \n";
+#    print "@speedLimit \n";
+}
+    
